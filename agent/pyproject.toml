@@ -15,10 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-kickoff = "agent.main:kickoff"
-start = "agent.main:RoutedFlow"
-papa = "agent.papa:main"
-agent = "agent.agent:main"
+app = "agent.appointment:main"
 
 [build-system]
 requires = ["hatchling"]
