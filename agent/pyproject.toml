@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 app = "agent.appointment:main"
+app_plot = "agent.appointment:plot"
 
 [build-system]
 requires = ["hatchling"]

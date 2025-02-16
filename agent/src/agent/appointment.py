@@ -141,5 +141,9 @@ def main():
             print(f"Agent: ERROR: {e}")
             break
 
+def plot():
+    flow = RoutedFlow()
+    flow.plot()
+
 if __name__ == "__main__":
     main()
