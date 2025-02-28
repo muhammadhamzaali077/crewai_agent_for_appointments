@@ -237,6 +237,9 @@
 # if __name__ == "__main__":
 #     main()
 
+
+
+
 import streamlit as st
 from datetime import datetime, timedelta
 from crewai.flow.flow import Flow
@@ -252,16 +255,21 @@ CALCOM_BASE_URL = "https://api.cal.com/v1"
 HEADERS = {"Content-Type": "application/json"}
 QUERYSTRING = {"apiKey": CALCOM_API_KEY}
 
-EVENT_TYPE = {'id': 1854515, 'title': 'AiCogniTech'}
+EVENT_TYPE = {'id': 1854515, 'title': 'EngageAI'}
 
 def initialize_chat_history():
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            {"role": "assistant", "content": """Welcome to AICongiTech! 🌟  
+            {"role": "assistant", "content": """Welcome to EngageAI! 🌟  
 
-We are revolutionizing health and wellness through cutting-edge AI innovations in FemTech, AgeTech, HealthTech, and Longevity. By addressing unique challenges in each sector, we deliver strategic solutions that redefine personalized care and well-being, shaping healthier, more fulfilling futures for all.  
+Hello! EngageAI specializes in crafting innovative AI-powered solutions tailored for HealthTech, AgeTech, FemTech, and Longevity industries. We excel in:  
 
-How can we assist you today? 😊"""}
+- **AI-Driven Bots:** Intelligent automation to streamline operations.  
+- **Multilingual Conversational AI:** Breaking language barriers for global reach.  
+- **Personalized AI Strategies:** Accelerating market entry and enhancing operational efficiency.  
+
+How can we assist you today? Whether you're exploring AI adoption or looking for bespoke AI strategies, we're here to guide you.
+"""}
         ]
 
 def schedule_booking(event_id, name, email, start_time, location="inPerson", title="Meeting", description="", timezone="Asia/Karachi"):
@@ -301,10 +309,26 @@ class StreamlitFlow(Flow):
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
     def process_user_input(self, user_input):
-        if any(word in user_input.lower() for word in ["schedule", "book", "meeting", "appointment"]):
+        if any(word in user_input.lower() for word in ["schedule", "book", "meeting", "appointment", "time slot", "event", "session", "booking"]):
             return "schedule_route"
+        elif any(word in user_input.lower() for word in ["healthtech", "femtech", "longevity", "agetech", "services", "solutions", "ai", "automation"]):
+            return "services_route"
         else:
             return "conversation_route"
+
+    def handle_services_query(self, user_input):
+        if "healthtech" in user_input.lower():
+            return """In HealthTech, we deliver personalized AI models for patient care, operational efficiency, and predictive analytics. Examples include medical chatbots, appointment automation, and clinical decision support systems. How can we assist you in HealthTech?"""
+        elif "femtech" in user_input.lower():
+            return """In FemTech, we provide AI solutions like menstrual tracking, fertility optimization tools, and personalized wellness recommendations. Would you like to explore any of these areas further?"""
+        elif "agetech" in user_input.lower() or "longevity" in user_input.lower():
+            return """In AgeTech and Longevity, our AI solutions support healthy aging through predictive analytics, smart healthcare monitoring, and cognitive health enhancement tools. Let us know your interest!"""
+        else:
+            return """We offer a wide range of AI-powered solutions across HealthTech, FemTech, AgeTech, and Longevity. Would you like to:  
+            1. Explore automation for your business?  
+            2. Learn about multilingual conversational AI?  
+            3. Discuss personalized AI strategies?  
+            Let us know your focus area."""
 
     def handle_conversation(self, user_input):
         try:
@@ -319,13 +343,15 @@ class StreamlitFlow(Flow):
 
 def main():
     st.set_page_config(
-        page_title="AICongiTech Assistant",
+        page_title="EngageAI",
         page_icon="🤖",
         layout="wide"
     )
 
     initialize_chat_history()
     flow = StreamlitFlow()
+
+    # Custom CSS for prompt styling
     st.markdown("""
     <style>
         div[data-testid="stChatInput"] {
@@ -349,8 +375,7 @@ def main():
             width: 100% !important;
         }
     </style>
-""", unsafe_allow_html=True)
-
+    """, unsafe_allow_html=True)
 
     with st.container():
         for message in st.session_state.messages:
@@ -358,31 +383,54 @@ def main():
                 st.write(message["content"])
 
         if prompt := st.chat_input("Type your message here..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-
-            route = flow.process_user_input(prompt)
-
-            if route == "schedule_route":
-                response = "Sure! Let's schedule an appointment. Please fill out the form below 👇"
-                st.session_state.messages.append({"role": "assistant", "content": response})
-                st.session_state.scheduling = True
+            if st.session_state.get("awaiting_schedule_confirmation"):
+                if prompt.lower() in ["yes", "yeah", "yep", "sure"]:
+                    st.session_state.show_schedule_form = True
+                    st.session_state.awaiting_schedule_confirmation = False
+                else:
+                    st.session_state.messages.append({"role": "assistant", "content": "Alright! Let us know if there's anything else we can assist you with."})
+                    st.session_state.awaiting_schedule_confirmation = False
             else:
-                response = flow.handle_conversation(prompt)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                route = flow.process_user_input(prompt)
+
+                if route == "schedule_route":
+                    response = """Great! Let's schedule your meeting.
+
+Here's what to do:
+- Provide your name, email, date, and time.
+- Choose whether to meet in person, online, or via phone.
+- Add any extra details you'd like us to know.
+
+Once Submitted:
+
+- We'll book your appointment and send a confirmation email.
+- If there's an issue, we'll follow up with alternatives.
+
+Do you want to schedule an appointment?"""
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+                    st.session_state.awaiting_schedule_confirmation = True
+                elif route == "services_route":
+                    response = flow.handle_services_query(prompt)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+                else:
+                    response = flow.handle_conversation(prompt)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
             st.rerun()
 
-        if st.session_state.get("scheduling", False):
+        if st.session_state.get("show_schedule_form", False):
             with st.chat_message("assistant"):
+                st.markdown("### Schedule an Appointment")
                 st.markdown("<div class='working-hours'>Our working hours are from 9:00 AM to 5:00 PM every day.</div>", unsafe_allow_html=True)
-
+                st.markdown("\n")
                 name = st.text_input("Name", placeholder="Enter your name")
                 email = st.text_input("Email", placeholder="Enter your email")
                 date = st.date_input("Preferred Date")
                 time = st.time_input("Preferred Time")
-                location = st.selectbox("Location", options=["inPerson", "online", "phone"], help="Select meeting location type")
-                timezone = st.text_input("Timezone", value="Asia/Karachi", help="Enter your timezone")
-                description = st.text_area("Description", placeholder="Additional details for the meeting")
+                location = st.selectbox("Location", options=["inPerson", "online", "phone"])
+                timezone = st.text_input("Timezone", value="Asia/Karachi")
+                description = st.text_area("Description", placeholder="Additional details")
 
                 if st.button("Submit Appointment"):
                     if not name or not email or not date or not time:
@@ -408,7 +456,7 @@ def main():
                         else:
                             st.session_state.messages.append({"role": "assistant", "content": "Failed to schedule the appointment. Please try again."})
 
-                        st.session_state.scheduling = False
+                        st.session_state.show_schedule_form = False
                         st.rerun()
 
 if __name__ == "__main__":

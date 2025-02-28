@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [project.scripts]
-app = "agent.appointment:main"
+appoointment = "agent.appointment:main"
+
 app_plot = "agent.appointment:plot"
 
 [build-system]
